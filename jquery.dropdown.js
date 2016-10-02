@@ -368,7 +368,7 @@
             text.push($(this).text());
           }
         });
-        $input.val(text.join(",  "));
+        $input.val(text.join(", "));
       }
 
       // Behavior for single select
