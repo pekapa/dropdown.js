@@ -42,10 +42,12 @@
   list-style: none;
   padding: 10px 20px;
 }
-.dropdownjs > ul  > li.dropdownjs-add {
+.dropdownjs > ul  > li.dropdownjs-add,
+.dropdownjs > ul  > li.dropdownjs-search {
   padding: 0;
 }
-.dropdownjs > ul  > li.dropdownjs-add > input {
+.dropdownjs > ul  > li.dropdownjs-add > input,
+.dropdownjs > ul  > li.dropdownjs-search > input {
   border: 0;
   padding: 10px 20px;
   width: 100%;

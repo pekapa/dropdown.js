@@ -23,7 +23,8 @@
       "destroy": function(element) {
         this.destroy(element);
       },
-      "dynamicOptLabel": "Add a new option..."
+      "dynamicOptLabel": "Add a new option...",
+      "searchOptLabel": "Search..."
     },
     init: function(options) {
 
@@ -46,6 +47,10 @@
         // Does it allow to create new options dynamically?
         var dynamicOptions = $select.attr("data-dynamic-opts"),
             $dynamicInput = $();
+
+        // Does it allow to search for options?
+        var searchOptions = $select.attr("data-dynamic-search"),
+            $searchInput = $();
 
         // Create the dropdown wrapper
         var $dropdown = $("<div></div>");
@@ -84,6 +89,14 @@
           $ul.append($dynamicInput);
         }
 
+        // If this select allows dynamic search add the widget
+        if (searchOptions) {
+          $searchInput = $("<li class=dropdownjs-search></li>");
+          $searchInput.append("<input>");
+          $searchInput.find("input").attr("type", "text");
+          $searchInput.find("input").attr("placeholder", options.searchOptLabel);
+          $ul.prepend($searchInput);
+        }
 
 
         // Cache the dropdown options
@@ -101,7 +114,7 @@
             }
             methods._select($dropdown, $selected);
         } else {
-            var selectors = [], val = $select.val()
+            var selectors = [], val = $select.val();
             for (var i in val) {
               selectors.push('li[value=' + val[i] + ']')
             }
@@ -131,7 +144,7 @@
         //---------------------------------------//
 
         // On click, set the clicked one as selected
-        $ul.on("click", "li:not(.dropdownjs-add)", function(e) {
+        $ul.on("click", "li:not(.dropdownjs-add, .dropdownjs-search)", function(e) {
           methods._select($dropdown, $(this));
           // trigger change event, if declared on the original selector
           $select.change();
@@ -145,9 +158,14 @@
             methods._select($dropdown, $(this));
             return false;
           }
+          if (e.which === 13 && !$(e.target).is("input")){
+            methods._select($dropdown, $(this));
+            $(".dropdownjs > ul > li").attr("tabindex", -1);
+            return $input.removeClass("focus").blur();
+          }
         });
 
-        $ul.on("focus", "li:not(.dropdownjs-add)", function() {
+        $ul.on("focus", "li:not(.dropdownjs-add, .dropdownjs-search)", function() {
           if ($select.is(":disabled")) {
             return;
           }
@@ -165,7 +183,38 @@
             $option.attr("value", val);
             $option.text(val);
             $select.append($option);
+          });
+        }
 
+        // Search for options when the widget is used
+        if (searchOptions && searchOptions.length) {
+          var searchTimeout;
+          $searchInput.on("keydown", function(e) {
+            if(e.which == 13) {
+              var visible = $searchInput.parent().find('li.select-option:not(.dropdownjs-hidden)');
+              if (visible) {
+                methods._select($dropdown, visible.eq(0));
+                $(".dropdownjs > ul > li").attr("tabindex", -1);
+                return $input.removeClass("focus").blur();
+              }
+            }
+
+            // Work with timeout to reduce amount of fired events and
+            // make get the propper inputed value
+            window.clearTimeout(searchTimeout);
+            searchTimeout = window.setTimeout(function() {
+              var val = $searchInput.find("input").val();
+              $searchInput.parent().find('li.select-option').each(function() {
+                if ($(this).text().toLowerCase().indexOf(val.toLowerCase()) >= 0) {
+                  $(this).show();
+                  $(this).removeClass('dropdownjs-hidden');
+                }
+                else {
+                  $(this).hide();
+                  $(this).addClass('dropdownjs-hidden');
+                }
+              });
+            }, 100);
           });
         }
 
@@ -175,7 +224,7 @@
           if (!$this.val().length) return;
 
           methods._addOption($ul, $this);
-          $ul.find("li").not(".dropdownjs-add").attr("tabindex", 0);
+          $ul.find("li").not(".dropdownjs-add, .dropdownjs-search").attr("tabindex", 0);
 
         });
 
@@ -223,7 +272,7 @@
           $(".dropdownjs > ul > li").attr("tabindex", -1);
           $(".dropdownjs > input").not($(this)).removeClass("focus").blur();
 
-          $(".dropdownjs > ul > li").not(".dropdownjs-add").attr("tabindex", 0);
+          $(".dropdownjs > ul > li").not(".dropdownjs-add, .dropdownjs-search").attr("tabindex", 0);
 
           // Set height of the dropdown
           var coords = {
@@ -245,6 +294,10 @@
 
           $(this).next("ul").css("max-height", height - 20);
           $(this).addClass("focus");
+
+          if (searchOptions && searchOptions.length) {
+            $searchInput.find('input').focus();
+          }
         });
         // Close every dropdown on click outside
         $(document).on("click", function(e) {
@@ -254,6 +307,9 @@
 
           // Don't close the dropdown if user is clicking inside the dynamic-opts widget
           if ($(e.target).parents(".dropdownjs-add").length || $(e.target).is(".dropdownjs-add")) return;
+
+          // Don't close the dropdown if user is clicking inside the dynamic-search widget
+          if ($(e.target).parents(".dropdownjs-search").length || $(e.target).is(".dropdownjs-search")) return;
 
           // Close opened dropdowns
           $(".dropdownjs > ul > li").attr("tabindex", -1);
@@ -312,7 +368,7 @@
             text.push($(this).text());
           }
         });
-        $input.val(text.join(", "));
+        $input.val(text.join(",  "));
       }
 
       // Behavior for single select
